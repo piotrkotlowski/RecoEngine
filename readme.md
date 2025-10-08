@@ -20,7 +20,7 @@ This repository implements a **hybrid recommendation platform** with two compone
 
 ## How to Run the Application
 
-To run the entire hybrid recommendation platform, navigate to the `Prod/` directory and run the `start_services.sh` script.
+To run the entire hybrid recommendation platform, navigate to the `Prod/` directory and run start_services.sh script.
 This will build and launch the ALS engine, conversational chat engine, and all necessary data ingestion services automatically.
 
 ```bash
@@ -65,39 +65,5 @@ Prod/
 │
 │── docker_chat_engine/       # Docker setup for chat engine
 │   ├── Dockerfile
-│   ├── requirements.txt
-│
-│── docker_ingest_chroma/     # Docker setup for ChromaDB ingestion
-│   ├── Dockerfile
-│   ├── requirements.txt
-│
-│── docker_ingest_pg/         # Docker setup for Postgres ingestion
-│   ├── Dockerfile
-│   ├── requirements.txt
-│
-│── main_func/                
-│   ├── main_func_als.py      # ALS example logic
-│   ├── main_func_chat.py     # Chat example logic
-│
-│── scripts/                  # Data ingestion scripts
-│   ├── ingest_chromadb.py    # Ingest data into ChromaDB
-│   ├── ingest_postgres.py    # Ingest data into Postgres
-│
-│── .env                      # Environment variables
-│── config.py                 # Global configs
-│── docker-compose.yaml       # Multi-service orchestration
-│── start_services.sh         # Script starting all functionalities
-│
-│── Modeling/                 # Offline experimentation
-│   ├── Data/
-│   │   ├── Cleaned/          # Processed datasets
-│   │   ├── Raw/              # Raw datasets
-│   │   ├── EDA/              # Exploratory analysis
-│   ├── 00_EDA.ipynb
-│   │
-│   ├── RecoSystem/           # Experimental modules
-│   ├── params/               # Modeling configs
-│   ├── split/                # Train/test split utils
-│   ├── als_modeling.ipynb    # ALS experiments
-│   ├── als_pytorch.py        # PyTorch ALS experiments
+│   ├── requiremen
 ```

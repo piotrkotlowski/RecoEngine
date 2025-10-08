@@ -164,13 +164,13 @@ class ALSRecommender:
                 with conn.cursor() as cur:
                     cur.execute("""
                         CREATE TABLE IF NOT EXISTS user_embeddings (
-                            user_id REFERENCES users(user_id) ON DELETE CASCADE,
+                            user_id bigint PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
                             embedding JSONB
                         );
                     """)
                     cur.execute("""
                         CREATE TABLE IF NOT EXISTS item_embeddings (
-                            item_id INT REFERENCES items(item_id) ON DELETE CASCADE,
+                            item_id bigint  PRIMARY KEY REFERENCES items(item_id) ON DELETE CASCADE,
                             embedding JSONB
                         );
                     """)
