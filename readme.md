@@ -20,7 +20,7 @@ This repository implements a **hybrid recommendation platform** with two compone
 
 ## How to Run the Application
 
-To run the entire hybrid recommendation platform, navigate to the `Prod/` directory and run start_services.sh script.
+To run the entire hybrid recommendation platform, navigate to the `Prod/` directory and run the `start_services.sh` script.
 This will build and launch the ALS engine, conversational chat engine, and all necessary data ingestion services automatically.
 
 ```bash
@@ -31,7 +31,10 @@ bash start_services.sh
 Once the containers are up, the system will automatically initialize the ALS model training, set up Redis and Postgres for data storage, and launch the conversational recommendation API powered by the LLM + RAG pipeline.
 
 ---
+
 ## Project Structure
+
+```
 Prod/
 │── als_trainer/              # ALS training pipeline
 │   ├── params/               # Hyperparameters/config files
@@ -83,6 +86,7 @@ Prod/
 │── .env                      # Environment variables
 │── config.py                 # Global configs
 │── docker-compose.yaml       # Multi-service orchestration
+│── start_services.sh         # Script starting all functionalities
 │
 │── Modeling/                 # Offline experimentation
 │   ├── Data/
@@ -96,3 +100,4 @@ Prod/
 │   ├── split/                # Train/test split utils
 │   ├── als_modeling.ipynb    # ALS experiments
 │   ├── als_pytorch.py        # PyTorch ALS experiments
+```
