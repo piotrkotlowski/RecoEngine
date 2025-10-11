@@ -1,4 +1,5 @@
 services:
+
   postgres_db:
     image: ${PG_IMAGE}
     container_name: ${PG_CONTAINER_NAME}
@@ -13,8 +14,36 @@ services:
       retries: 20
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports:
-      - ${PG_PORT_LOCAL}:${PG_PORT_DOCKER}
+    networks:
+      - internal_db_net
+
+  redis:
+    image: ${REDIS_IMAGE}
+    container_name: ${REDIS_CONTAINER_NAME}
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal_db_net
+
+  chroma_db:
+    image: ${CHROMA_IMAGE}
+    container_name: ${CHROMA_CONTAINER_NAME}
+    env_file: .env
+    volumes:
+      - chroma_data:/data
+    healthcheck:
+      test: ["CMD", "/bin/bash", "-c", "cat < /dev/null > /dev/tcp/localhost/8000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - internal_db_net
+
 
   ingest_pg:
     build:
@@ -27,39 +56,12 @@ services:
     depends_on:
       postgres_db:
         condition: service_healthy
-    restart: "no"
+    restart: no
     volumes:
       - ./data_ingest:/data_ingest
       - ./scripts/ingest_postgres.py:/ingest/ingest_postgres.py
-  
-  
-  redis:
-    image: ${REDIS_IMAGE}
-    container_name: ${REDIS_CONTAINER_NAME}
-    ports:
-      -  ${REDIS_PORT_LOCAL}:${REDIS_PORT_DOCKER}
-    volumes:
-      - redisdata:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  chroma_db:
-    image: ${CHROMA_IMAGE}
-    container_name: ${CHROMA_CONTAINER_NAME}
-    ports:
-      - ${CHROMA_PORT_LOCAL}:${CHROMA_PORT_DOCKER}
-    env_file: .env
-    volumes:
-      - chroma_data:/data
-    healthcheck:
-      test: [ "CMD", "/bin/bash", "-c", "cat < /dev/null > /dev/tcp/localhost/8000" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
+    networks:
+      - internal_db_net
 
   ingest_chroma:
     build:
@@ -72,20 +74,20 @@ services:
     depends_on:
       chroma_db:
         condition: service_healthy
-    restart: "no"
+    restart: no
     volumes:
       - ./data_ingest:/data_ingest
       - ./scripts/ingest_chromadb.py:/ingest/ingest_chromadb.py
-  
+    networks:
+      - internal_db_net
+
 
   ollama:
     image: ${OLLAMA_IMAGE}
     container_name: ${OLLAMA_CONTAINER_NAME}
     env_file: .env
     environment:
-      - OLLAMA_HOST=0.0.0.0:11434
-    ports:
-      - ${OLLAMA_PORT_LOCAL}:${OLLAMA_PORT_DOCKER}
+      - OLLAMA_HOST=${OLLAMA_HOST}
     volumes:
       - ollama:/root/.ollama
     healthcheck:
@@ -101,6 +103,8 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    networks:
+      - internal_db_net
 
   ollama-model-init:
     image: ollama/ollama:latest
@@ -110,28 +114,26 @@ services:
         condition: service_healthy
     env_file: .env
     environment:
-      - OLLAMA_HOST=http://ollama:11434
-    command: >
-      pull ${OLLAMA_MODEL}
+      - OLLAMA_HOST=${OLLAMA_URL}
+    command: pull ${OLLAMA_MODEL}
     volumes:
       - ollama:/root/.ollama
-    restart: "no"
-  
+    restart: no
+    networks:
+      - internal_db_net
+
+
   als_trainer:
     container_name: ${ALS_TRAINER_CONTAINER_NAME}
-    build: 
-      context: . 
+    build:
+      context: .
       dockerfile: docker_als_trainer/Dockerfile
-    
       args:
         PYTHON_IMAGE: ${PYTHON_IMAGE}
-      
-    env_file: .env 
-    volumes :
-    - ./als_trainer:/app/als_trainer
-    - ./config.py:/app/config.py
-    ports:
-      - "8005:8000"
+    env_file: .env
+    volumes:
+      - ./als_trainer:/app/als_trainer
+      - ./config.py:/app/config.py
     depends_on:
       postgres_db:
         condition: service_healthy
@@ -152,6 +154,8 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    networks:
+      - internal_db_net
 
 
   als_reco_engine:
@@ -182,7 +186,6 @@ services:
       timeout: 10s
       retries: 10
       start_period: 120s
-
     deploy:
       resources:
         reservations:
@@ -190,7 +193,9 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-
+    networks:
+      - default   
+      - internal_db_net
 
   chat_reco_engine:
     build:
@@ -225,9 +230,21 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    networks:
+      - default
+      - internal_db_net
+
 
 volumes:
   pgdata: {}
   ollama: {}
   chroma_data: {}
   redisdata: {}
+
+
+networks:
+  internal_db_net:
+    driver: bridge
+    internal: true
+  default:
+    driver: bridge
